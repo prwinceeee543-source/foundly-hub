@@ -35,10 +35,14 @@ export const Route = createRootRoute({
       { name: "description", content: "Report and recover lost items on campus. Foundly connects students with their belongings." },
       { name: "author", content: "Lovable" },
       { property: "og:title", content: "Foundly — Student Lost & Found" },
-      { property: "og:description", content: "Report and recover lost items on campus." },
+      { property: "og:description", content: "Report and recover lost items on campus. Foundly connects students with their belongings." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "Foundly — Student Lost & Found" },
+      { name: "twitter:description", content: "Report and recover lost items on campus. Foundly connects students with their belongings." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/c37d2878-fe68-47ac-beb5-370614193082/id-preview-f6a1773e--d8cd3b9f-b9ff-466b-9d5e-3e02e11129ce.lovable.app-1777616232067.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/c37d2878-fe68-47ac-beb5-370614193082/id-preview-f6a1773e--d8cd3b9f-b9ff-466b-9d5e-3e02e11129ce.lovable.app-1777616232067.png" },
     ],
     links: [
       {
