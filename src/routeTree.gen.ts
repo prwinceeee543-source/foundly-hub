@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LostRouteImport } from './routes/lost'
 import { Route as FoundRouteImport } from './routes/found'
+import { Route as BrowseRouteImport } from './routes/browse'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 
@@ -22,6 +23,11 @@ const LostRoute = LostRouteImport.update({
 const FoundRoute = FoundRouteImport.update({
   id: '/found',
   path: '/found',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BrowseRoute = BrowseRouteImport.update({
+  id: '/browse',
+  path: '/browse',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -38,12 +44,14 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/browse': typeof BrowseRoute
   '/found': typeof FoundRoute
   '/lost': typeof LostRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/browse': typeof BrowseRoute
   '/found': typeof FoundRoute
   '/lost': typeof LostRoute
 }
@@ -51,20 +59,22 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/browse': typeof BrowseRoute
   '/found': typeof FoundRoute
   '/lost': typeof LostRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/found' | '/lost'
+  fullPaths: '/' | '/auth' | '/browse' | '/found' | '/lost'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/found' | '/lost'
-  id: '__root__' | '/' | '/auth' | '/found' | '/lost'
+  to: '/' | '/auth' | '/browse' | '/found' | '/lost'
+  id: '__root__' | '/' | '/auth' | '/browse' | '/found' | '/lost'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
+  BrowseRoute: typeof BrowseRoute
   FoundRoute: typeof FoundRoute
   LostRoute: typeof LostRoute
 }
@@ -83,6 +93,13 @@ declare module '@tanstack/react-router' {
       path: '/found'
       fullPath: '/found'
       preLoaderRoute: typeof FoundRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/browse': {
+      id: '/browse'
+      path: '/browse'
+      fullPath: '/browse'
+      preLoaderRoute: typeof BrowseRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -105,6 +122,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
+  BrowseRoute: BrowseRoute,
   FoundRoute: FoundRoute,
   LostRoute: LostRoute,
 }
