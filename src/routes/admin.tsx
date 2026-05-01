@@ -39,11 +39,22 @@ function AdminPage() {
       supabase.from("items").select("*").order("created_at", { ascending: false }),
       supabase
         .from("claims")
-        .select("*, items(item_name), profiles!claims_user_id_fkey(full_name,email,student_id)")
+        .select("*, items(item_name)")
         .order("created_at", { ascending: false }),
     ]);
     setItems((it.data as Item[]) ?? []);
-    setClaims((cl.data as any) ?? []);
+    const claimsData = (cl.data as any[]) ?? [];
+    // Fetch profiles separately (no FK between claims.user_id and profiles)
+    const userIds = [...new Set(claimsData.map((c) => c.user_id))];
+    if (userIds.length) {
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("id, full_name, email, student_id")
+        .in("id", userIds);
+      const map = new Map((profs ?? []).map((p) => [p.id, p]));
+      claimsData.forEach((c) => { c.profiles = map.get(c.user_id) ?? null; });
+    }
+    setClaims(claimsData);
   };
 
   useEffect(() => { refresh(); }, []);
