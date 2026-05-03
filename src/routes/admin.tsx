@@ -8,9 +8,13 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { Check, X, Package } from "lucide-react";
+import { Check, X, Package, Trash2 } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "Admin Dashboard — Foundly" }] }),
@@ -33,6 +37,11 @@ function AdminPage() {
   const [items, setItems] = useState<Item[]>([]);
   const [claims, setClaims] = useState<Claim[]>([]);
   const [q, setQ] = useState("");
+  const [pendingAction, setPendingAction] = useState<
+    | { kind: "claim"; status: "approved" | "rejected"; id: string; itemId: string; name: string }
+    | { kind: "deleteItem"; id: string; name: string }
+    | null
+  >(null);
 
   const refresh = async () => {
     const [it, cl] = await Promise.all([
@@ -67,7 +76,7 @@ function AdminPage() {
     } else {
       await supabase.from("items").update({ status: "unclaimed" }).eq("id", itemId);
     }
-    toast.success(`Claim ${status}`);
+    toast.success(status === "approved" ? "Claim approved — item marked as claimed" : "Claim rejected — item is available again");
     refresh();
   };
 
@@ -77,6 +86,16 @@ function AdminPage() {
     toast.success("Status updated");
     refresh();
   };
+
+  const deleteItem = async (id: string) => {
+    await supabase.from("claims").delete().eq("item_id", id);
+    const { error } = await supabase.from("items").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Item deleted");
+    refresh();
+  };
+
+  const statusLabel = (s: string) => s === "unclaimed" ? "Available" : s === "pending" ? "Pending Approval" : s === "claimed" ? "Claimed" : s;
 
   const filteredItems = items.filter((i) =>
     !q || `${i.item_name} ${i.last_location ?? ""}`.toLowerCase().includes(q.toLowerCase())
@@ -111,10 +130,10 @@ function AdminPage() {
               <p className="mt-1 text-sm"><strong>Signed:</strong> <em>{c.digital_signature}</em></p>
               {c.status === "pending" && (
                 <div className="mt-4 flex gap-2">
-                  <Button size="sm" onClick={() => updateClaim(c.id, "approved", c.item_id)}>
+                  <Button size="sm" onClick={() => setPendingAction({ kind: "claim", status: "approved", id: c.id, itemId: c.item_id, name: c.items?.item_name ?? "this item" })}>
                     <Check className="mr-1 h-4 w-4" /> Approve
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => updateClaim(c.id, "rejected", c.item_id)}>
+                  <Button size="sm" variant="outline" onClick={() => setPendingAction({ kind: "claim", status: "rejected", id: c.id, itemId: c.item_id, name: c.items?.item_name ?? "this item" })}>
                     <X className="mr-1 h-4 w-4" /> Reject
                   </Button>
                 </div>
@@ -143,11 +162,15 @@ function AdminPage() {
                     <Select value={i.status} onValueChange={(v) => updateItemStatus(i.id, v)}>
                       <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="unclaimed">Unclaimed</SelectItem>
-                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="unclaimed">Available</SelectItem>
+                        <SelectItem value="pending">Pending Approval</SelectItem>
                         <SelectItem value="claimed">Claimed</SelectItem>
                       </SelectContent>
                     </Select>
+                    <Button size="sm" variant="outline" className="w-full text-destructive hover:text-destructive"
+                      onClick={() => setPendingAction({ kind: "deleteItem", id: i.id, name: i.item_name })}>
+                      <Trash2 className="mr-1 h-3.5 w-3.5" /> Delete
+                    </Button>
                   </div>
                 </Card>
               ))}
@@ -155,6 +178,36 @@ function AdminPage() {
           )}
         </TabsContent>
       </Tabs>
+
+      <AlertDialog open={!!pendingAction} onOpenChange={(o) => !o && setPendingAction(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {pendingAction?.kind === "claim" && pendingAction.status === "approved" && `Approve claim for "${pendingAction.name}"?`}
+              {pendingAction?.kind === "claim" && pendingAction.status === "rejected" && `Reject claim for "${pendingAction.name}"?`}
+              {pendingAction?.kind === "deleteItem" && `Delete "${pendingAction.name}"?`}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingAction?.kind === "claim" && pendingAction.status === "approved" &&
+                "The item will be marked as Claimed and no longer available to others."}
+              {pendingAction?.kind === "claim" && pendingAction.status === "rejected" &&
+                "The claim will be rejected and the item returned to Available."}
+              {pendingAction?.kind === "deleteItem" &&
+                "This permanently removes the item and any related claims."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              const a = pendingAction;
+              setPendingAction(null);
+              if (!a) return;
+              if (a.kind === "claim") updateClaim(a.id, a.status, a.itemId);
+              else if (a.kind === "deleteItem") deleteItem(a.id);
+            }}>Confirm</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </PageShell>
   );
 }
