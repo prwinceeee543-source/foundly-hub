@@ -35,6 +35,15 @@ export function PageShell({
         </div>
         {children}
       </main>
+      <footer className="border-t border-border bg-card/40 py-6 text-center text-sm text-muted-foreground">
+        <div className="mx-auto max-w-5xl space-y-1 px-4">
+          <p>© {new Date().getFullYear()} Foundly. Reuniting students with their stuff.</p>
+          <p className="text-xs">
+            <span className="font-semibold text-foreground/80">Credits:</span>{" "}
+            Developed by TQM Group 1 — School Project for Campus Use
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }
