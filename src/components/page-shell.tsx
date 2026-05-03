@@ -21,7 +21,7 @@ export function PageShell({
 
   useEffect(() => {
     if (loading) return;
-    if (requireAuth && !user) navigate({ to: "/auth" });
+    if (requireAuth && !user) navigate({ to: "/auth", search: { redirect: "/" } });
     if (requireAdmin && role && role !== "admin") navigate({ to: "/" });
   }, [user, role, loading, requireAuth, requireAdmin, navigate]);
 
