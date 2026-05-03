@@ -32,7 +32,7 @@ export function SiteHeader() {
               </Button>
             </>
           ) : (
-            <Button size="sm" onClick={() => navigate({ to: "/auth" })}>
+            <Button size="sm" onClick={() => navigate({ to: "/auth", search: { redirect: "/" } })}>
               Sign in
             </Button>
           )}
