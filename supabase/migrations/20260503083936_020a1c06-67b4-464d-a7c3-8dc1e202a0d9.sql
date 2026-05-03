@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.validate_claim_insert() FROM PUBLIC, anon, authenticated;

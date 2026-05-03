@@ -7,6 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { format } from "date-fns";
 import { MapPin, Calendar, Package } from "lucide-react";
 
@@ -33,6 +37,7 @@ function BrowsePage() {
   const [filter, setFilter] = useState<"all" | "lost" | "found">("all");
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(true);
+  const [confirmItem, setConfirmItem] = useState<Item | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -52,6 +57,10 @@ function BrowsePage() {
     return true;
   });
 
+  const statusLabel = (s: string) => s === "unclaimed" ? "Available" : s === "pending" ? "Pending Approval" : s === "claimed" ? "Claimed" : s;
+  const statusVariant = (s: string): "default" | "outline" | "destructive" | "secondary" =>
+    s === "claimed" ? "default" : s === "pending" ? "secondary" : "outline";
+
   return (
     <PageShell title="Browse items" subtitle="All reported lost and found items.">
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -68,7 +77,7 @@ function BrowsePage() {
           onChange={(e) => setQ(e.target.value)}
           className="sm:max-w-xs"
         />
-        <Button variant="outline" onClick={() => navigate({ to: "/claim" })} className="sm:ml-auto">
+        <Button variant="outline" onClick={() => navigate({ to: "/claim", search: { itemId: "" } })} className="sm:ml-auto">
           File a claim
         </Button>
       </div>
@@ -111,10 +120,10 @@ function BrowsePage() {
                   </div>
                 </div>
                 <div className="mt-3 flex items-center justify-between">
-                  <Badge variant="outline" className="text-xs">{i.status}</Badge>
+                  <Badge variant={statusVariant(i.status)} className="text-xs capitalize">{statusLabel(i.status)}</Badge>
                   {i.type === "found" && i.status === "unclaimed" && (
-                    <Button size="sm" variant="ghost" onClick={() => navigate({ to: "/claim", search: { itemId: i.id } as any })}>
-                      Claim
+                    <Button size="sm" onClick={() => setConfirmItem(i)}>
+                      Claim Item
                     </Button>
                   )}
                 </div>
@@ -123,6 +132,26 @@ function BrowsePage() {
           ))}
         </div>
       )}
+
+      <AlertDialog open={!!confirmItem} onOpenChange={(o) => !o && setConfirmItem(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Claim "{confirmItem?.item_name}"?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You'll be asked to upload an ID and describe proof of ownership.
+              An admin will review your request before the item is marked as claimed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              const id = confirmItem?.id;
+              setConfirmItem(null);
+              if (id) navigate({ to: "/claim", search: { itemId: id } });
+            }}>Continue</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </PageShell>
   );
 }

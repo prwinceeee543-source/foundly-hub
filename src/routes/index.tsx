@@ -102,7 +102,13 @@ function Index() {
       </main>
 
       <footer className="border-t border-border bg-card/40 py-6 text-center text-sm text-muted-foreground">
-        © {new Date().getFullYear()} Foundly. Reuniting students with their stuff.
+        <div className="mx-auto max-w-6xl space-y-1 px-4">
+          <p>© {new Date().getFullYear()} Foundly. Reuniting students with their stuff.</p>
+          <p className="text-xs">
+            <span className="font-semibold text-foreground/80">Credits:</span>{" "}
+            Developed by TQM Group 1 — School Project for Campus Use
+          </p>
+        </div>
       </footer>
     </div>
   );
