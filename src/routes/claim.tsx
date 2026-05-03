@@ -68,7 +68,7 @@ function ClaimPage() {
       if (error) throw error;
       // mark item pending
       await supabase.from("items").update({ status: "pending" }).eq("id", itemId);
-      toast.success("Claim submitted! An admin will review it.");
+      toast.success("Claim request sent for approval.");
       navigate({ to: "/browse" });
     } catch (err: any) {
       toast.error(err.message ?? "Submission failed");
