@@ -20,8 +20,13 @@ export function SiteHeader() {
           {user ? (
             <>
               {role === "admin" && (
-                <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/admin" })}>
-                  <ShieldCheck className="mr-1.5 h-4 w-4" /> Admin
+                <Button
+                  size="sm"
+                  onClick={() => navigate({ to: "/admin" })}
+                  className="bg-[image:var(--gradient-hero)] text-primary-foreground shadow-[var(--shadow-soft)] hover:opacity-90 font-semibold"
+                >
+                  <ShieldCheck className="mr-1.5 h-4 w-4" />
+                  Admin Dashboard
                 </Button>
               )}
               <span className="hidden text-sm text-muted-foreground sm:inline">
