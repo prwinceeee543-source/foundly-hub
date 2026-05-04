@@ -19,7 +19,7 @@ export function SiteHeader() {
         <nav className="flex items-center gap-2">
           {user ? (
             <>
-              {role === "admin" && (
+              {user && (
                 <Button
                   size="sm"
                   onClick={() => navigate({ to: "/admin" })}
