@@ -27,33 +27,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const fetchRole = async (uid: string) => {
+      const { data } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", uid)
+        .maybeSingle();
+      setRole((data?.role as Role) ?? "user");
+    };
+
     const { data: sub } = supabase.auth.onAuthStateChange((_event, sess) => {
       setSession(sess);
       setUser(sess?.user ?? null);
       if (sess?.user) {
-        setTimeout(async () => {
-          const { data } = await supabase
-            .from("user_roles")
-            .select("role")
-            .eq("user_id", sess.user.id)
-            .maybeSingle();
-          setRole((data?.role as Role) ?? "user");
+        setLoading(true);
+        setTimeout(() => {
+          fetchRole(sess.user.id).finally(() => setLoading(false));
         }, 0);
       } else {
         setRole(null);
+        setLoading(false);
       }
     });
 
-    supabase.auth.getSession().then(({ data: { session: sess } }) => {
+    supabase.auth.getSession().then(async ({ data: { session: sess } }) => {
       setSession(sess);
       setUser(sess?.user ?? null);
       if (sess?.user) {
-        supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", sess.user.id)
-          .maybeSingle()
-          .then(({ data }) => setRole((data?.role as Role) ?? "user"));
+        await fetchRole(sess.user.id);
       }
       setLoading(false);
     });

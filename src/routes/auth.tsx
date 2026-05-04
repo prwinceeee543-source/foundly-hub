@@ -20,15 +20,15 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
-  const { user, role } = useAuth();
+  const { user, role, loading: authLoading } = useAuth();
   const search = Route.useSearch();
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!user) return;
+    if (authLoading || !user || !role) return;
     if (role === "admin") navigate({ to: "/admin" });
     else navigate({ to: search.redirect || "/" });
-  }, [user, role, navigate, search.redirect]);
+  }, [user, role, authLoading, navigate, search.redirect]);
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
