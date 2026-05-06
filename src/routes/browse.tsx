@@ -1,18 +1,24 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
 import { PageShell } from "@/components/page-shell";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { format } from "date-fns";
-import { MapPin, Calendar, Package } from "lucide-react";
+import { MapPin, Calendar, Package, Pencil, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/browse")({
   head: () => ({ meta: [{ title: "Browse Items — Foundly" }] }),
@@ -38,18 +44,50 @@ function BrowsePage() {
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(true);
   const [confirmItem, setConfirmItem] = useState<Item | null>(null);
+  const [editItem, setEditItem] = useState<Item | null>(null);
+  const [deleteItem, setDeleteItem] = useState<Item | null>(null);
   const navigate = useNavigate();
+  const { role } = useAuth();
+  const isAdmin = role === "admin";
 
-  useEffect(() => {
-    supabase
+  const refresh = async () => {
+    const { data } = await supabase
       .from("items")
       .select("*")
-      .order("created_at", { ascending: false })
-      .then(({ data }) => {
-        setItems((data as Item[]) ?? []);
-        setLoading(false);
-      });
-  }, []);
+      .order("created_at", { ascending: false });
+    setItems((data as Item[]) ?? []);
+    setLoading(false);
+  };
+
+  useEffect(() => { refresh(); }, []);
+
+  const handleSaveEdit = async () => {
+    if (!editItem) return;
+    const { error } = await supabase
+      .from("items")
+      .update({
+        item_name: editItem.item_name,
+        description: editItem.description,
+        last_location: editItem.last_location,
+        type: editItem.type,
+        status: editItem.status,
+      })
+      .eq("id", editItem.id);
+    if (error) return toast.error(error.message);
+    toast.success("Item updated");
+    setEditItem(null);
+    refresh();
+  };
+
+  const handleDelete = async () => {
+    if (!deleteItem) return;
+    await supabase.from("claims").delete().eq("item_id", deleteItem.id);
+    const { error } = await supabase.from("items").delete().eq("id", deleteItem.id);
+    if (error) return toast.error(error.message);
+    toast.success("Item deleted");
+    setDeleteItem(null);
+    refresh();
+  };
 
   const filtered = items.filter((i) => {
     if (filter !== "all" && i.type !== filter) return false;
@@ -127,6 +165,16 @@ function BrowsePage() {
                     </Button>
                   )}
                 </div>
+                {isAdmin && (
+                  <div className="mt-3 flex gap-2 border-t border-border pt-3">
+                    <Button size="sm" variant="outline" className="flex-1" onClick={() => setEditItem({ ...i })}>
+                      <Pencil className="mr-1 h-3.5 w-3.5" /> Edit
+                    </Button>
+                    <Button size="sm" variant="outline" className="flex-1 text-destructive hover:text-destructive" onClick={() => setDeleteItem(i)}>
+                      <Trash2 className="mr-1 h-3.5 w-3.5" /> Delete
+                    </Button>
+                  </div>
+                )}
               </div>
             </Card>
           ))}
@@ -149,6 +197,72 @@ function BrowsePage() {
               setConfirmItem(null);
               if (id) navigate({ to: "/claim", search: { itemId: id } });
             }}>Continue</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <Dialog open={!!editItem} onOpenChange={(o) => !o && setEditItem(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit item</DialogTitle>
+          </DialogHeader>
+          {editItem && (
+            <div className="space-y-3">
+              <div>
+                <Label>Name</Label>
+                <Input value={editItem.item_name} onChange={(e) => setEditItem({ ...editItem, item_name: e.target.value })} />
+              </div>
+              <div>
+                <Label>Description</Label>
+                <Textarea value={editItem.description ?? ""} onChange={(e) => setEditItem({ ...editItem, description: e.target.value })} />
+              </div>
+              <div>
+                <Label>Last location</Label>
+                <Input value={editItem.last_location ?? ""} onChange={(e) => setEditItem({ ...editItem, last_location: e.target.value })} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Type</Label>
+                  <Select value={editItem.type} onValueChange={(v) => setEditItem({ ...editItem, type: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="lost">Lost</SelectItem>
+                      <SelectItem value="found">Found</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Status</Label>
+                  <Select value={editItem.status} onValueChange={(v) => setEditItem({ ...editItem, status: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="unclaimed">Available</SelectItem>
+                      <SelectItem value="pending">Pending Approval</SelectItem>
+                      <SelectItem value="claimed">Claimed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditItem(null)}>Cancel</Button>
+            <Button onClick={handleSaveEdit}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!deleteItem} onOpenChange={(o) => !o && setDeleteItem(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete "{deleteItem?.item_name}"?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently removes the item and any related claims.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
