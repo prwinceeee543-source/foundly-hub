@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { SiteHeader } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
-import { Search, PackageOpen, ShieldCheck, Sparkles, ArrowRight } from "lucide-react";
+import { Search, PackageOpen, ShieldCheck, Sparkles, ArrowRight, Facebook } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 
 export const Route = createFileRoute("/")({
@@ -98,6 +98,27 @@ function Index() {
           <Link to="/browse" className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline">
             Browse all reported items <ArrowRight className="h-4 w-4" />
           </Link>
+        </section>
+
+        {/* Live link directory */}
+        <section className="pb-20">
+          <div className="mx-auto max-w-2xl rounded-2xl border border-border bg-card p-6 text-center shadow-[var(--shadow-card)]">
+            <div className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[image:var(--gradient-hero)] text-primary-foreground shadow-md">
+              <Facebook className="h-6 w-6" />
+            </div>
+            <h3 className="text-xl font-semibold">Follow us on Facebook</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Stay updated with the latest lost &amp; found posts from our community page.
+            </p>
+            <a
+              href="https://www.facebook.com/share/1DtNtfGJQY/?mibextid=wwXIfr"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
+            >
+              Visit our Facebook page <ArrowRight className="h-4 w-4" />
+            </a>
+          </div>
         </section>
       </main>
 
