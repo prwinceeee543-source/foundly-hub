@@ -94,9 +94,6 @@ function AuthPage() {
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? "Signing in..." : "Sign in"}
                 </Button>
-                <p className="text-xs text-muted-foreground text-center">
-                  Admin? Use <code className="rounded bg-muted px-1">admin@foundly.app</code> / <code className="rounded bg-muted px-1">admin123</code>
-                </p>
               </form>
             </TabsContent>
 
