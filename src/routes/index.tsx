@@ -9,7 +9,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const navigate = useNavigate();
 
   const go = (to: string) => {
@@ -93,12 +93,14 @@ function Index() {
           ))}
         </section>
 
-        {/* Browse */}
-        <section className="pb-20 text-center">
-          <Link to="/browse" className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline">
-            Browse all reported items <ArrowRight className="h-4 w-4" />
-          </Link>
-        </section>
+        {/* Browse — admin only */}
+        {role === "admin" && (
+          <section className="pb-20 text-center">
+            <Link to="/browse" className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline">
+              Browse all reported items <ArrowRight className="h-4 w-4" />
+            </Link>
+          </section>
+        )}
 
         {/* Live link directory */}
         <section className="pb-20">
