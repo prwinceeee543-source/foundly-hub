@@ -47,8 +47,14 @@ function BrowsePage() {
   const [editItem, setEditItem] = useState<Item | null>(null);
   const [deleteItem, setDeleteItem] = useState<Item | null>(null);
   const navigate = useNavigate();
-  const { role } = useAuth();
+  const { role, loading: authLoading } = useAuth();
   const isAdmin = role === "admin";
+
+  useEffect(() => {
+    if (!authLoading && role && role !== "admin") {
+      navigate({ to: "/" });
+    }
+  }, [authLoading, role, navigate]);
 
   const refresh = async () => {
     const { data } = await supabase
