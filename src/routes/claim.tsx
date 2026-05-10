@@ -36,7 +36,7 @@ function ClaimPage() {
       .from("items")
       .select("id, item_name")
       .eq("type", "found")
-      .eq("status", "unclaimed")
+      .neq("status", "claimed")
       .order("created_at", { ascending: false })
       .then(({ data }) => setItems(data ?? []));
   }, []);
