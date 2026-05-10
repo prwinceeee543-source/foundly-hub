@@ -36,6 +36,8 @@ type Item = {
   last_location: string | null;
   image_url: string | null;
   status: string;
+  user_id: string;
+  reporter?: { full_name: string | null; email: string | null; contact_number: string | null; student_id: string | null } | null;
 };
 
 function BrowsePage() {
@@ -61,7 +63,17 @@ function BrowsePage() {
       .from("items")
       .select("*")
       .order("created_at", { ascending: false });
-    setItems((data as Item[]) ?? []);
+    const list = (data as Item[]) ?? [];
+    if (list.length) {
+      const userIds = [...new Set(list.map((i) => i.user_id))];
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("id, full_name, email, contact_number, student_id")
+        .in("id", userIds);
+      const map = new Map((profs ?? []).map((p) => [p.id, p]));
+      list.forEach((i) => { i.reporter = map.get(i.user_id) ?? null; });
+    }
+    setItems(list);
     setLoading(false);
   };
 
@@ -179,6 +191,14 @@ function BrowsePage() {
                     <Button size="sm" variant="outline" className="flex-1 text-destructive hover:text-destructive" onClick={() => setDeleteItem(i)}>
                       <Trash2 className="mr-1 h-3.5 w-3.5" /> Delete
                     </Button>
+                  </div>
+                )}
+                {isAdmin && i.reporter && (
+                  <div className="mt-3 space-y-0.5 rounded-md border border-border bg-muted/30 p-2 text-xs">
+                    <p className="font-medium text-foreground">Reported by</p>
+                    <p className="text-muted-foreground">{i.reporter.full_name ?? "—"}{i.reporter.student_id ? ` · ${i.reporter.student_id}` : ""}</p>
+                    {i.reporter.email && <p className="text-muted-foreground">{i.reporter.email}</p>}
+                    {i.reporter.contact_number && <p className="text-muted-foreground">{i.reporter.contact_number}</p>}
                   </div>
                 )}
               </div>
