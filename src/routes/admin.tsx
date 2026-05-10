@@ -87,10 +87,12 @@ function AdminPage() {
   const updateClaim = async (id: string, status: "approved" | "rejected", itemId: string) => {
     const { error } = await supabase.from("claims").update({ status }).eq("id", id);
     if (error) return toast.error(error.message);
-    if (status === "approved") {
-      await supabase.from("items").update({ status: "claimed" }).eq("id", itemId);
-    } else {
-      await supabase.from("items").update({ status: "unclaimed" }).eq("id", itemId);
+    if (itemId) {
+      if (status === "approved") {
+        await supabase.from("items").update({ status: "claimed" }).eq("id", itemId);
+      } else {
+        await supabase.from("items").update({ status: "unclaimed" }).eq("id", itemId);
+      }
     }
     toast.success(status === "approved" ? "Claim approved — item marked as claimed" : "Claim rejected — item is available again");
     refresh();
