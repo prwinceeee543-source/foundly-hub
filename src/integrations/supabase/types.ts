@@ -17,36 +17,45 @@ export type Database = {
       claims: {
         Row: {
           agreement: boolean
+          claimed_item_description: string | null
+          claimed_item_name: string | null
           created_at: string
           digital_signature: string
           id: string
           id_image_url: string | null
-          item_id: string
+          item_id: string | null
           proof_description: string
+          proof_image_url: string | null
           status: string
           updated_at: string
           user_id: string
         }
         Insert: {
           agreement?: boolean
+          claimed_item_description?: string | null
+          claimed_item_name?: string | null
           created_at?: string
           digital_signature: string
           id?: string
           id_image_url?: string | null
-          item_id: string
+          item_id?: string | null
           proof_description: string
+          proof_image_url?: string | null
           status?: string
           updated_at?: string
           user_id: string
         }
         Update: {
           agreement?: boolean
+          claimed_item_description?: string | null
+          claimed_item_name?: string | null
           created_at?: string
           digital_signature?: string
           id?: string
           id_image_url?: string | null
-          item_id?: string
+          item_id?: string | null
           proof_description?: string
+          proof_image_url?: string | null
           status?: string
           updated_at?: string
           user_id?: string

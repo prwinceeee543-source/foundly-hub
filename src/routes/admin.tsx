@@ -29,8 +29,13 @@ type Item = {
 type Claim = {
   id: string; item_id: string; user_id: string; proof_description: string;
   digital_signature: string; status: string; id_image_url: string | null; created_at: string;
+  proof_image_url: string | null;
+  claimed_item_name: string | null;
+  claimed_item_description: string | null;
   items?: { item_name: string } | null;
   profiles?: { full_name: string | null; email: string | null; student_id: string | null } | null;
+  id_signed_url?: string | null;
+  proof_signed_url?: string | null;
 };
 
 function AdminPage() {
@@ -63,6 +68,17 @@ function AdminPage() {
       const map = new Map((profs ?? []).map((p) => [p.id, p]));
       claimsData.forEach((c) => { c.profiles = map.get(c.user_id) ?? null; });
     }
+    // Generate signed URLs for ID and proof images (private buckets)
+    await Promise.all(claimsData.map(async (c) => {
+      if (c.id_image_url) {
+        const { data } = await supabase.storage.from("claim-ids").createSignedUrl(c.id_image_url, 3600);
+        c.id_signed_url = data?.signedUrl ?? null;
+      }
+      if (c.proof_image_url) {
+        const { data } = await supabase.storage.from("claim-proofs").createSignedUrl(c.proof_image_url, 3600);
+        c.proof_signed_url = data?.signedUrl ?? null;
+      }
+    }));
     setClaims(claimsData);
   };
 
@@ -71,10 +87,12 @@ function AdminPage() {
   const updateClaim = async (id: string, status: "approved" | "rejected", itemId: string) => {
     const { error } = await supabase.from("claims").update({ status }).eq("id", id);
     if (error) return toast.error(error.message);
-    if (status === "approved") {
-      await supabase.from("items").update({ status: "claimed" }).eq("id", itemId);
-    } else {
-      await supabase.from("items").update({ status: "unclaimed" }).eq("id", itemId);
+    if (itemId) {
+      if (status === "approved") {
+        await supabase.from("items").update({ status: "claimed" }).eq("id", itemId);
+      } else {
+        await supabase.from("items").update({ status: "unclaimed" }).eq("id", itemId);
+      }
     }
     toast.success(status === "approved" ? "Claim approved — item marked as claimed" : "Claim rejected — item is available again");
     refresh();
@@ -116,7 +134,9 @@ function AdminPage() {
             <Card key={c.id} className="p-5 shadow-[var(--shadow-card)]">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <h3 className="font-semibold">{c.items?.item_name ?? "Item"}</h3>
+                  <h3 className="font-semibold">
+                    {c.claimed_item_name ?? c.items?.item_name ?? "Item"}
+                  </h3>
                   <p className="text-xs text-muted-foreground">
                     {c.profiles?.full_name} · {c.profiles?.student_id} · {c.profiles?.email}
                   </p>
@@ -126,8 +146,29 @@ function AdminPage() {
                   {c.status}
                 </Badge>
               </div>
-              <p className="mt-3 text-sm"><strong>Proof:</strong> {c.proof_description}</p>
+              {c.claimed_item_description && (
+                <p className="mt-3 text-sm"><strong>Description:</strong> {c.claimed_item_description}</p>
+              )}
+              <p className="mt-2 text-sm"><strong>Proof of ownership:</strong> {c.proof_description}</p>
               <p className="mt-1 text-sm"><strong>Signed:</strong> <em>{c.digital_signature}</em></p>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                {c.id_signed_url && (
+                  <div>
+                    <p className="mb-1 text-xs font-medium text-muted-foreground">Valid ID</p>
+                    <a href={c.id_signed_url} target="_blank" rel="noreferrer">
+                      <img src={c.id_signed_url} alt="Submitted ID" className="h-40 w-full rounded-md border object-cover" />
+                    </a>
+                  </div>
+                )}
+                {c.proof_signed_url && (
+                  <div>
+                    <p className="mb-1 text-xs font-medium text-muted-foreground">Proof of ownership photo</p>
+                    <a href={c.proof_signed_url} target="_blank" rel="noreferrer">
+                      <img src={c.proof_signed_url} alt="Ownership proof" className="h-40 w-full rounded-md border object-cover" />
+                    </a>
+                  </div>
+                )}
+              </div>
               {c.status === "pending" && (
                 <div className="mt-4 flex gap-2">
                   <Button size="sm" onClick={() => setPendingAction({ kind: "claim", status: "approved", id: c.id, itemId: c.item_id, name: c.items?.item_name ?? "this item" })}>
